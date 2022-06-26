@@ -4,10 +4,10 @@ const router = new express.Router();
 
 
 router.group('/', (routes) => {
-    routes.get('/', function(req, res, next) {
-        res.send("Server is up");
-      });
-      ;
+  routes.get('/', function(req, res, next) {
+    res.send('Server is Up');
+  });
+  ;
 });
 
 module.exports = router;

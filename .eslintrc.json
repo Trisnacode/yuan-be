@@ -1,0 +1,19 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es2021": true
+    },
+    "extends": [
+        "google"
+    ],
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "allowImportExportEverywhere": true
+    },
+    "rules": {
+        "linebreak-style": 0,
+        "max-len": ["error", { "code": 200 }],
+        "require-jsdoc" : 0
+    }
+}
