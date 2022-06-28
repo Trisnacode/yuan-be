@@ -1,16 +1,58 @@
 require('dotenv').config();
 
-const express = require('express')
-const app = express()
-require('express-group-routes');
-const port = process.env.PORT || 3000
+const express = require('express');
+const app = express();
 
+// Export Documentation
+const expressJSDocSwagger = require('express-jsdoc-swagger');
+const options = {
+  info: {
+    version: '1.0.0',
+    title: 'Yuan Membership Apps',
+    description: 'API description',
+  },
+  servers: [
+    {
+      url: 'http://localhost:3000/api/v1',
+      description: 'Local Server',
+    },
+    {
+      url: 'http://localhost:3000',
+      description: 'Local Server Basic',
+    },
+  ],
+  security: {
+    BasicAuth: {
+      type: 'https',
+      scheme: 'basic',
+    },
+    BasicBearer: {
+      type: 'http',
+      scheme: 'bearer',
+    },
+  },
+  baseDir: __dirname,
+  filesPattern: './routes/*.js',
+  swaggerUIPath: '/api-docs',
+  exposeSwaggerUI: true,
+  exposeApiDocs: true,
+  apiDocsPath: '/json/api-docs',
+  notRequiredAsNullable: false,
+  swaggerUiOptions: {},
+  multiple: false,
+};
+
+expressJSDocSwagger(app)(options);
+
+// Export express accessories
+require('express-group-routes');
+const port = process.env.PORT || 3000;
 const fs = require('fs');
 const path = require('path');
 
+// Export other
 const logger = require('morgan');
 const cors = require('cors');
-const prisma = require('./prisma')
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -25,6 +67,7 @@ app.use(function(req, res, next) {
   next();
 });
 
+// Export each routers
 fs.readdirSync(__dirname + '/routes').filter((file) => {
   return file.toLowerCase().endsWith('.js');
 }).forEach((file) => {
@@ -48,5 +91,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
-  console.log(`App listening on port ${port}`)
-})
+  console.log(`App listening on port ${port}`);
+});

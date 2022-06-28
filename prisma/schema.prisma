@@ -16,7 +16,7 @@ model Member {
   id                    Int             @id @default(autoincrement())
   title                 String?
   name                  String?
-  phone                 String          @unique
+  phone                 String          
   email                 String?
   password              String?
 
