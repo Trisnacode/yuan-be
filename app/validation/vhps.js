@@ -25,10 +25,10 @@ async function validateTransactionHotel(payload) {
         roomtype: Joi.string(),
       })),
     })),
-    vouchers: Joi.array.item(Joi.object({
+    vouchers: Joi.array().items(Joi.object({
       voucher_code: Joi.string(),
     })),
-    benefits: Joi.array.item(Joi.object({
+    benefits: Joi.array().items(Joi.object({
       benefit_id: Joi.string(),
     })),
   });
@@ -66,10 +66,10 @@ async function validateTransactionOutlet(payload) {
         ratecode: Joi.string(),
         roomtype: Joi.string(),
       })),
-      vouchers: Joi.array.item(Joi.object({
+      vouchers: Joi.array().items(Joi.object({
         voucher_code: Joi.string(),
       })),
-      benefits: Joi.array.item(Joi.object({
+      benefits: Joi.array().items(Joi.object({
         benefit_id: Joi.string(),
       })),
     })),
