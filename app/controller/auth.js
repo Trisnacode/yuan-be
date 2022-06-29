@@ -70,18 +70,22 @@ async function login(req, res) {
 
   try {
     // Get Data based on phone
-    const member = await prisma.member.findUnique({
+    const member = await prisma.member.findFirst({
       where: {
-        phone: fields.phone,
+        AND: [
+          {phone: fields.phone},
+          {deleted_at: null},
+        ],
       },
     });
+
+    if (!member) return resp.sendUnauthorized('Invalid Member');
 
     // Bycrpt Compare Password
     const isPasswordMatch = await bcrypt.compare(fields.password, member.password);
 
-    if (!isPasswordMatch) {
-      return resp.sendUnauthorized('Invalid Password');
-    }
+    if (!isPasswordMatch) return resp.sendUnauthorized('Invalid Password');
+
     // Generate JWT
     const token = jwt.sign({
       id: member.id,
@@ -92,9 +96,9 @@ async function login(req, res) {
       expiresIn: JWT_EXP,
     });
 
+    // Define Payload
     const payload = {
-      id: member.id,
-      phone: member.phone,
+      result: member,
       token: token,
     };
 
