@@ -4,7 +4,7 @@ class SendResult {
     return this;
   }
 
-  static send(data = undefined, statusCode, message) {
+  static send(statusCode, message, data = undefined) {
     if (data) {
       return this.res.status(200).json(
           {
