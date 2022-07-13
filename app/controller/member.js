@@ -1,5 +1,3 @@
-// const prisma = require('../../prisma');
-
 // // import Response
 // const {RESPONSE_CODE, ERROR_CODE} = require('../response/constant');
 // const Response = require('../response/default');

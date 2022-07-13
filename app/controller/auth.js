@@ -1,5 +1,4 @@
 const bcrypt = require('bcrypt');
-const prisma = require('../../prisma');
 
 // import ENV Variables
 const SALT = parseInt(process.env.SALT) || process.env.SALT;
@@ -10,50 +9,44 @@ const JWT_EXP = parseInt(process.env.JWT_EXP);
 const {RESPONSE_CODE, ERROR_CODE} = require('../response/constant');
 const Response = require('../response/default');
 
-// import validateion
-const {validateRegister, validateLogin} = require('../validation/auth');
-
 // import other
 const jwt = require('jsonwebtoken');
+
+// import model
+const Member = require('../model/member');
 
 async function register(req, res) {
   const fields = req.body;
   const resp = Response.make(res);
 
-  // validate
-  const validation = await validateRegister(fields);
-  if (validation !== true) return resp.sendInvalidData(validation);
-
   try {
+    let previousMember;
     // Check if phone number already exist
-    const previousMember = await prisma.member.findFirst({
-      where: {
-        phone: fields.phone,
-      },
-    });
-
+    previousMember = await Member.query().findOne({'phone': fields.phone});
     if (previousMember) return resp.sendClientError(ERROR_CODE.DUPLICATE_DATA, 'Phone already exist');
+
+    // Check if email already exist
+    previousMember = await Member.query().findOne({'email': fields.email});
+    if (previousMember) return resp.sendClientError(ERROR_CODE.DUPLICATE_DATA, 'Email already exist');
 
     // Encrypt Password
     const encryptedPassword = await bcrypt.hash(fields.password, SALT);
-    const data = await prisma.member.create({
-      data: {
-        title: fields.title,
-        name: fields.name,
-        phone: fields.phone,
-        email: fields.email,
-        password: encryptedPassword,
-        gender: fields.gender,
-        address: fields.address,
-        country: fields.country,
-        city: fields.city,
-        birth_date: fields.birthDate,
-      },
+    const data = await Member.query().insert({
+      title: fields.title,
+      name: fields.name,
+      phone: fields.phone,
+      email: fields.email,
+      password: encryptedPassword,
+      gender: fields.gender,
+      address: fields.address,
+      country: fields.country,
+      city: fields.city,
+      birth_date: fields.birth_date,
     });
 
-    // if (data) {
-    resp.send(data, RESPONSE_CODE.SUCCESS_LOGIN, 'success');
-    // }
+    delete data.password;
+
+    resp.send(RESPONSE_CODE.SUCCESS_LOGIN, 'success', data);
   } catch (error) {
     console.error(error);
     resp.sendServerError(ERROR_CODE.ERROR_SERVER);
@@ -64,21 +57,20 @@ async function login(req, res) {
   const fields = req.body;
   const resp = Response.make(res);
 
-  // validate
-  const validation = await validateLogin(fields);
-  if (validation !== true) return resp.sendInvalidData(validation);
-
   try {
-    // Get Data based on phone
-    const member = await prisma.member.findFirst({
-      where: {
-        AND: [
-          {phone: fields.phone},
-          {deleted_at: null},
-        ],
-      },
-    });
+    // Find user
+    let query = Member.query().whereNotDeleted();
+    switch (fields.method) {
+      case 'PHONE':
+        query = query.where('phone', fields.phone);
+        break;
 
+      default:
+        query = query.where('email', fields.email);
+        break;
+    }
+
+    const member = await query.first();
     if (!member) return resp.sendUnauthorized('Invalid Member');
 
     // Bycrpt Compare Password
@@ -89,7 +81,8 @@ async function login(req, res) {
     // Generate JWT
     const token = jwt.sign({
       id: member.id,
-      phone: member.phone,
+      method: 'LOGIN',
+      type: 'MEMBER',
     },
     JWT_SECRET,
     {
@@ -102,7 +95,7 @@ async function login(req, res) {
       token: token,
     };
 
-    resp.send(payload, RESPONSE_CODE.SUCCESS_LOGIN, 'success');
+    resp.send(RESPONSE_CODE.SUCCESS_LOGIN, 'success', payload);
   } catch (error) {
     console.error(error);
     resp.sendServerError(ERROR_CODE.ERROR_SERVER);
@@ -110,11 +103,98 @@ async function login(req, res) {
 }
 
 async function resetPassword(req, res) {
+  const fields = req.body;
+  const resp = Response.make(res);
 
+  try {
+    // Find user
+    let query = Member.query().whereNotDeleted();
+    switch (fields.method) {
+      case 'PHONE':
+        query = query.where('phone', fields.phone);
+        break;
+
+      default:
+        query = query.where('email', fields.email);
+        break;
+    }
+
+    const member = await query.first();
+    if (!member) return resp.sendUnauthorized('Invalid Member');
+
+    // Generate JWT
+    const token = jwt.sign({
+      id: member.id,
+      method: 'reset',
+    },
+    JWT_SECRET,
+    {
+      expiresIn: JWT_EXP,
+    });
+
+    // TODO : Sent Email / Reset Link
+    console.log(token);
+
+
+    resp.send(RESPONSE_CODE.SUCCESS_LOGIN, 'success');
+  } catch (error) {
+    console.error(error);
+    resp.sendServerError(ERROR_CODE.ERROR_SERVER);
+  }
 }
 
 async function changePassword(req, res) {
+  const id = req.member.id;
+  const fields = req.body;
+  const resp = Response.make(res);
 
+  try {
+    // Find user
+    const member = await Member.query().whereNotDeleted().findById(id);
+    if (!member) return resp.sendUnauthorized('Invalid Member');
+
+    // Bycrpt Compare Password
+    const isPasswordMatch = await bcrypt.compare(fields.password_old, member.password);
+    if (!isPasswordMatch) return resp.sendUnauthorized('Invalid Password');
+
+    // Change Password
+    await Member.query().where('id', id).patch({
+      password: await bcrypt.hash(fields.password_new, SALT),
+    });
+
+    resp.send('SUCCESS CHANGE', 'success');
+  } catch (error) {
+    console.error(error);
+    resp.sendServerError(ERROR_CODE.ERROR_SERVER);
+  }
+}
+
+async function changeProfile(req, res) {
+  const id = req.member.id;
+  const fields = req.body;
+  const resp = Response.make(res);
+
+  try {
+    // Find user
+    const member = await Member.query().whereNotDeleted().findById(id);
+    if (!member) return resp.sendUnauthorized('Invalid Member');
+
+    // Change Password
+    await Member.query().where('id', id).patch({
+      title: fields.title,
+      name: fields.name,
+      gender: fields.gender,
+      address: fields.address,
+      country: fields.country,
+      city: fields.city,
+      birth_date: fields.birth_date,
+    });
+
+    resp.send('SUCCESS CHANGE', 'success');
+  } catch (error) {
+    console.error(error);
+    resp.sendServerError(ERROR_CODE.ERROR_SERVER);
+  }
 }
 
 module.exports = {
@@ -122,4 +202,5 @@ module.exports = {
   login,
   resetPassword,
   changePassword,
+  changeProfile,
 };
