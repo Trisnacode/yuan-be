@@ -10,7 +10,7 @@
   "author": "trisnacode",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^3.15.2",
+    "@joi/date": "^2.1.0",
     "bcrypt": "^5.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
@@ -19,8 +19,12 @@
     "express-jsdoc-swagger": "^1.6.8",
     "joi": "^17.6.0",
     "jsonwebtoken": "^8.5.1",
+    "knex": "^2.1.0",
     "morgan": "^1.10.0",
-    "prisma": "^3.15.1"
+    "mysql2": "^2.3.3",
+    "objection": "^3.0.1",
+    "objection-js-soft-delete": "^3.0.2",
+    "randomstring": "^1.2.2"
   },
   "devDependencies": {
     "eslint": "^8.18.0",
