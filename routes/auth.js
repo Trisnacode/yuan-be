@@ -1,7 +1,12 @@
 const express = require('express');
 const router = new express.Router();
 
+const {validateLogin, validateRegister, validateChange, validateProfile} = require('../app/validation/auth');
 const authController = require('../app/controller/auth');
+const authCmsController = require('../app/controller/authCms');
+
+const {authMember} = require('../app/middleware/auth');
+
 
 /**
  * Member Object
@@ -10,33 +15,15 @@ const authController = require('../app/controller/auth');
  */
 
 router.group('/api/v1/auth', (routes) => {
-  /**
- * POST /auth/register
- * @summary Register Member
- * @tags Authentication
- * @param {Member} request.body.required
- * @example request - example payload
- * {
- * "phone": "628123456789",
- * "password": "password"
- * }
- * @return {object} 200 - success response
- */
-  routes.post('/register', authController.register);
+  routes.post('/register', validateRegister, authController.register);
+  routes.post('/login', validateLogin, authController.login);
+  routes.post('/change-password', authMember, validateChange, authController.changePassword);
+  routes.post('/change-profile', authMember, validateProfile, authController.changeProfile);
+});
 
-  /**
- * POST /auth/login
- * @summary Register Member
- * @tags Authentication
- * @param {Member} request.body.required
- * @example request - example payload
- * {
- * "phone": "628123456789",
- * "password": "password"
- * }
- * @return {object} 200 - success response
- */
-  routes.post('/login', authController.login);
+router.group('/api/v1/authcms', (routes) => {
+  routes.post('/login', validateLogin, authCmsController.login);
+  routes.post('/change-password', authMember, validateChange, authCmsController.changePassword);
 });
 
 module.exports = router;
